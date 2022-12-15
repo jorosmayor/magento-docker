@@ -18,11 +18,7 @@ _Descarga el proyecto_
 git pull
 ```
 
-_Accede al directorio dev_
-
-```
-cd dev/
-```
+_Añadir las claves en el fichero auth.json ubicado en php_
 
 _Para el setup_
 
