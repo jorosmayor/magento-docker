@@ -1,0 +1,82 @@
+version: '3'
+
+networks:
+  network: 
+    driver: bridge
+
+volumes:
+  appdata:
+
+services:
+  nginx:
+    build: ./nginx
+    volumes: &magentovolumes
+      - ./appdata:/var/www/html
+    links:
+      - php
+      - bbdd
+    networks:
+      - network
+    hostname: nginx_magento
+    ports:
+      - 80:80
+  php:
+    build: ./php
+    volumes: *magentovolumes
+    networks:
+      - network
+    hostname: php_magento
+    links:
+      - bbdd
+    command: ['php-fpm']
+  bbdd:
+    image: mysql:8.0
+    volumes:
+      - ./bbdd/volume:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=magento
+      - MYSQL_PASSWORD=magento
+      - MYSQL_DATABASE=magento
+    networks:
+      - network
+    hostname: bbdd_magento
+    ports:
+      - 3306:3306
+  elasticsearch:
+    image: elasticsearch:7.17.7
+    environment:
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    depends_on:
+      - bbdd
+    networks:
+      - network
+    ports:
+      - 9200:9200
+      - 9300:9300
+    hostname: es_magento
+  redis:
+    image: redis:7
+    volumes:
+      - ./redis/volume:/etc/redis/
+    depends_on:
+      - bbdd
+    networks:
+      - network
+    hostname: redis_magento
+    ports:
+      - 6379:6379
+  rabbitmq:
+    image: rabbitmq:3.9-management
+    env_file:
+      - ./rabbitmq/rabbitmq.env
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - network
+    hostname: rabbit_magento
+    volumes:
+      - ./rabbitmq/volume:/var/lib/rabbitmq
